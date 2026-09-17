@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Digital Sandbox & Archive</title>
+    <style>
+        /* --- Default Light Theme Variables --- */
+        :root {
+            --bg-color: #fcfbf9;       /* Soft cream */
+            --text-color: #1a1a1a;     /* Deep charcoal */
+            --accent-color: #2e3b31;   /* Dark grey */
+            --border-style: 1px solid #d1cdb8;
+            --font-serif: "Courier New", Courier, monospace;
+        }
+
+        /* --- Dark Theme Variables --- */
+        [data-theme="dark"] {
+            --bg-color: #121212;       /* Deep slate/black */
+            --text-color: #e0e0e0;     /* Muted off-white */
+            --accent-color: #a9a9a9;   /* Brighter, glowing grey */
+            --border-style: 1px solid #333333;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-serif);
+            line-height: 1.6;
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            position: relative;
+            overflow-x: hidden; 
+        }
+
+        /* --- Layout Container --- */
+        .wrapper {
+            max-width: 850px;
+            width: 100%;
+            position: relative;
+            z-index: 2; 
+        }
+
+        /* --- Header Centering --- */
+        header {
+            border-bottom: var(--border-style);
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+            position: relative; 
+            text-align: center; /* Centers Name, Tagline, and Nav */
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin: 0 0 10px 0;
+            font-weight: normal;
+            letter-spacing: -1px;
+        }
+
+        .subtitle {
+            font-style: italic;
+            color: #666;
+            margin: 0;
+        }
+
+        /* --- Theme Toggle Switch Design --- */
+        .theme-switch-wrapper {
+            position: absolute;
+            top: 0;
+            right: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .theme-label {
+            font-size: 0.75rem;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .theme-toggle-btn {
+            width: 44px;
+            height: 22px;
+            background-color: transparent;
+            border: var(--border-style);
+            border-radius: 12px;
+            position: relative;
+            cursor: pointer;
+            outline: none;
+            padding: 0;
+        }
+
+        .toggle-knob {
+            width: 14px;
+            height: 14px;
+            background-color: var(--text-color);
+            border-radius: 50%;
+            position: absolute;
+            top: 3px;
+            left: 4px;
+            transition: transform 0.3s ease, background-color 0.3s ease;
+        }
+
+        /* Moves the switch knob when dark mode is active */
+        [data-theme="dark"] .toggle-knob {
+            transform: translateX(20px);
+        }
+
+        /* --- Navigation --- */
+        nav {
+            margin-top: 20px;
+        }
+
+        nav a {
+            color: var(--text-color);
+            text-decoration: none;
+            margin: 0 10px; /* Spaced out evenly for centered layout */
+            font-weight: bold;
+            border-bottom: 1px dashed transparent;
+            transition: color 0.2s ease;
+        }
+
+        nav a:hover {
+            border-bottom: 1px dashed var(--accent-color);
+            color: var(--accent-color);
+        }
+
+        /* --- Two Column Split --- */
+        .grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 40px;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            .theme-switch-wrapper {
+                position: relative;
+                margin-top: 25px;
+                justify-content: center;
+                width: 100%;
+            }
+        }
+
+        /* --- Main Content Areas --- */
+        main section {
+            margin-bottom: 40px;
+        }
+
+        h2 {
+            font-size: 1.3rem;
+            border-bottom: var(--border-style);
+            padding-bottom: 5px;
+            color: var(--accent-color);
+            font-weight: normal;
+        }
+
+        /* --- Sidebar & Logs --- */
+        aside {
+            border-left: var(--border-style);
+            padding-left: 20px;
+        }
+
+        @media (max-width: 768px) {
+            aside {
+                border-left: none;
+                border-top: var(--border-style);
+                padding-left: 0;
+                padding-top: 20px;
+            }
+        }
+
+        .log-entry {
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            list-style: none;
+            padding: 0;
+        }
+
+        .date {
+            color: #888;
+            font-size: 0.8rem;
+            display: block;
+        }
+
+        footer {
+            margin-top: 60px;
+            border-top: var(--border-style);
+            padding-top: 20px;
+            font-size: 0.8rem;
+            text-align: center;
+            color: #888;
+        }
+
+        /* --- Interactive Side Panels (Math, Phil & Music) --- */
+        .math-panel, .phil-panel, .music-panel {
+            position: fixed;
+            top: 5%; 
+            width: 280px; 
+            font-size: 0.95rem; 
+            line-height: 1.3;
+            color: var(--accent-color);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+            white-space: pre; 
+            pointer-events: none; 
+            font-family: var(--font-serif);
+            z-index: 1;
+            text-align: center; 
+        }
+
+        .math-panel-left, .phil-panel-left, .music-panel-left {
+            left: calc((50vw - 425px) / 2); 
+            transform: translateX(-50%); 
+        }
+
+        .math-panel-right, .phil-panel-right, .music-panel-right {
+            right: calc((50vw - 425px) / 2); 
+            transform: translateX(50%); 
+        }
+
+        /* Inner Wrapper to preserve ASCII geometry while staying centered */
+        .ascii-wrapper {
+            display: inline-block;
+            text-align: left;
+        }
+
+        /* Active visibility class toggled by JS (Opacity set to 1 for full clarity) */
+        .panel-visible {
+            opacity: 1 !important; 
+            visibility: visible !important;
+        }
+
+        /* Lowered threshold so laptops down to 1150px wide can render them */
+        @media (max-width: 1150px) {
+            .math-panel, .phil-panel, .music-panel {
+                display: none !important;
+            }
+        }
+    </style>
+<script type='text/javascript' src='https://neocities.org/H5EQ1gzoRLcnkjvQCEaXW3ntUZ5QhA_8fPMZRmEw4OZfUWcAs3GdT9HPwTaBK_NarMXxcao9g8tWI8_r3BivpD8jqbGLxf2jybJ_Ep-TVhlGnH0m-uHRyb8rI0YOxCgvKaLcfNlpns9LTRwOkNTlJdHhmPE-eXAPokrgy3BtraSktX8EHNTPnrO_J4WVWXRQa26jGypBSZdYutagiyvJQg_F-ZnKTGA860EHQE0BG09R65ve4EIBNoPnHJmifRSbI4KwOrILdgi0XssrOYGsHUqM3Q72OdEvPoBzLXKPlney0kicG_Rre5c9x-gxBlptbfCTgN9it12Stdj8M8fn5_52xHrGlkJHIegqvcR6V0jUu02KbecT_gjab2d5c5Qyq9ebX0L9-xYQ0gqsgJq2XPcClDLMQ4qYyg3iNbLww8pjUl184h_WTU1o70iCBxHMD4DgyVhziI71_2OPh9XRHYL6ZaiqhKU0qrj4llQrWSCnBKfYlY_MKf7AYhPcuhwRwQ'></script><script type='text/javascript' src='https://neocities.org/Gz4I0_gIGyD1FNwVJ5xEjoKrhY22RDbQeIRZyh8KMAeU6TjxrHonvrR5ARcN8qWDFm5CZf4xfpM4W0xCErrMh2omWP7w7f7oxTTSGjHTl70OcZX8vW23zwz5FAlArbCZ0li3g_JBQcqqQWwfqgW6Hfa074CBWZMnliyz2TZPDbh1ZWLhfJ9NTiaZfzGx-zU3Fkn-V5vcXTaZKDpqaxreGjbKTjt9hpD6PJA01fYDFSpnnnhxFL-DTqVuqtYiHl4xRNVP-kJDjd6F7yS966ESWsg1NWzefNjcbW8POipRATsjjpYuPIqP0Va5wdTlQ1eN6AL2wYb1_3zLpNQS8g_21PYOxGLaz-Ij4E5UfvZuLbaulGI-P0opEp1K8eYLuoPKg96X6kS10tufxoLUGj3WCw5cA6JPjxh1sBV0bN2O8088c44-_ItJwU59I6IRXuoYe_CJ8vG_IyiA8W_74bm9XV5GWahCfCUjVcET7IZeNBrCPRk2Ya4UHhvheN7vLBif3w'></script><script type='text/javascript' src='https://neocities.org/joa86bKjeABpLzsUyDanis862HtBV_BpUZ6dPQGFVYUfVJTICkWqOEMxKokyNo2drXJ8nTcnkAaFTvxtAgXcQR8mhAh8pL_VHY764PreT9se2JWVcLZPEDoUEqCua-z_IfbrqIew1WmV8Ev7W3buCuMxMcb3cUG9k87_WcmfkRkOcEIxNr8vtCt516E123mwSesXKl0HQON03HAUyncAaVz2JbY7WT3Kze_GUSmShJySAFwKIC3CEzbi-muQ8c1UfIXO44PNYhBcwCeNWffoHEyHtR2UU2JAY-261FROGVeRryuNhKAK13dQBjmfJBY_RTiiNs-HDVQwyBGABiyZ9w6hoS4Dz7qbLToNfBFSmAs2bW5a_KQyhx9SHIkfIOrG9LrINgdEoUnJLzzXXM5DS0JH44IvedcbO0uYjDlvznpdru69cNK9dRM5sRZGoMbegEHM30KERE-I88zn6vk9I8i85TX-UIp4cx_jrNu2kXKCPACdQ2dqhCAS-qJN7ZG7Ug'></script></head>
+<body>
+
+    <div class="math-panel math-panel-left">
+        <div class="ascii-wrapper">
+[ THEORETIC FOUNDATION ]
+{ ∅ } ⊆ S ⊆ ∪ S_i
+
+[ AXIOMATIC DUST ]
+ •   .    •.   .  •   .   .
+   .   •   .   •    .   •  
+ .   •    .    .  •   .   .
+   .   •   .   •    .   •
+
+[ PARTIAL ORDERING ]can 
+       (X)
+      / | \
+    (A)(B)(C)
+     \ /  |
+     (Y) (D)
+       \ /
+       (Z)
+
+[ TOPOLOGY & METRICS ]
+ ( ( (  •  ) ) )
+ τ = {∅, X, τ_i}
+
+[ CAUCHY SEQUENCE ]
+ ∀ε>0 ∃N ∀m,n>N :
+ d(x_m, x_n) &lt; ε
+
+[ INFINITE ACCUMULATION ]
+ x_n → L as n → ∞
+        </div>
+    </div>
+
+    <div class="math-panel math-panel-right">
+        <div class="ascii-wrapper">
+[ MANIFOLD PROJECTION ]
+       ______
+     .-"      "-.
+    /            \
+   |   .-----------.
+   |  /             \
+   | |    M          |
+    \ \             /
+     '-._______.-'
+        |   π
+        v
+   [ ℝ^n CHART ]
+
+[ COORDINATE SYSTEM ]
+     Y
+     │   . P(x,y,z)
+     │  /
+     │ /
+     │/_______ X
+    /
+   Z
+
+[ LIE ALGEBRA ]
+ [X, Y] = XY - YX
+
+[ EXACT SEQUENCE ]
+ 0 → A → B → C → 0
+
+[ STOKES' THEOREM ]
+ ∫_M dω = ∫_∂M ω
+        </div>
+    </div>
+
+    <div class="phil-panel phil-panel-left">
+        <div class="ascii-wrapper">
+[ THE GADFLY (SOCRATES) ]
+      .-------.
+     /   _ _   \
+     |  (o|o)  |
+     |    >    |
+      \  ===  /
+       `.___.'
+       /  |  \
+      /   |   \
+
+[ THE PHENOMENOLOGIST ]
+      .-------.
+     /  _   _  \
+     |-(o)-(o)-|
+     |    <    |
+      \  ---  /
+       `.___.'
+       /  |  \
+      /   |   \
+        </div>
+    </div>
+
+    <div class="phil-panel phil-panel-right">
+        <div class="ascii-wrapper">
+[ EPISTEMIC CLOSURE ]
+K_s(P) ∧ K_s(P → Q) ⊢ K_s(Q)
+
+[ CARTESIAN DOUBT ]
+□(Think(x) → Exist(x))
+
+[ THE GETTIER OBJECTION ]
+J(S, P) ∧ B(S, P) ∧ T(P) ⇏ K(S, P)
+
+[ JTB FRAMEWORK ]
+S knows that P iff:
+ 1. P is true
+ 2. S believes P
+ 3. S is justified in
+    believing P
+
+[ ONTOLOGICAL NECESSITY ]
+◊∃x□∀y(y ≤ x) → □∃x∀y(y ≤ x)
+        </div>
+    </div>
+
+    <div class="music-panel music-panel-left">
+        <div class="ascii-wrapper">
+[ RESONANCE & TENSION ]
+  ~   ~   ~   ~   ~
+    ~   ~   ~   ~ 
+  ~   ~   ~   ~   ~
+ 
+ String Frequency:
+ f = (1 / 2L) √(T / μ)
+
+[ EQUAL TEMPERAMENT ]
+  _________________
+ |  | | | |  |  | |
+ |  | | | |  |  | |
+ |  |_| |_|  |  |_|
+ |   |   |   |   |
+ |___|___|___|___|
+
+[ OVERTONE SERIES ]
+ f, 2f, 3f, 4f, 5f...
+        </div>
+    </div>
+
+    <div class="music-panel music-panel-right">
+        <div class="ascii-wrapper">
+[ STAFF NOTATION ]
+-------|---------
+   |\  |   O
+---|/--|---|-----
+  /|   |   |
+-/=|---|---|-----
+   |  _|_  |
+---\_/---\_/-----
+
+[ HARMONIC MOVEMENT ]
+ Em7    Bm     Cmaj9
+ 022030 x24432 x3243x
+
+ Dmin7  G7     Cmaj7
+ x5756x 3x343x x3545x
+
+[ POLYRHYTHM ]
+ 3 : 2
+ x  x  x  (Triplets)
+ x    x   (Eighths)
+        </div>
+    </div>
+
+    <div class="wrapper">
+        
+        <header>
+            
+            <div class="theme-switch-wrapper">
+                <span class="theme-label" id="themeLabel">PROTOCOL: LIGHT</span>
+                <button class="theme-toggle-btn" id="themeToggle" aria-label="Toggle dark mode">
+                    <div class="toggle-knob"></div>
+                </button>
+            </div>
+
+            <h1>Sahaib Rakhra</h1>
+            <p class="subtitle">Some ideas and truths I find especially meaningful.</p>
+
+            <nav>
+                <a href="#math" class="math-trigger">Mathematics</a>
+                <a href="#philosophy" class="phil-trigger">Philosophy</a>
+                <a href="#music" class="music-trigger">Music</a>
+                <a href="#blog">Blog</a>
+            </nav>
+        </header>
+
+        <div class="grid">
+            
+            <main>
+                <section id="math">
+                    <h2>I. Mathematics</h2>
+                    <p>An exploration of pure mathematical structures. Currently mapping out a project to visualize abstract axioms—moving from arbitrary sets to structured topological spaces and geometric manifolds.</p>
+                </section>
+
+                <section id="philosophy">
+                    <h2>II. Schools of Thought</h2>
+                    <p>Musings on the philosophy of mathematics, human consciousness, and the Cartesian pursuit of fundamental truths. What does it mean for an abstraction to be faithful?</p>
+                </section>
+
+                <section id="music">
+                    <h2>III. Interpretations and Realizations of Sonics</h2>
+                    <p>Tracking sonic movements, experimental compositions, and post-rock arrangements that frame the background of my thinking.</p>
+                </section>
+            </main>
+
+            <aside>
+                <h2>Recent Logs</h2>
+                <ul class="log-entry">
+                    <li>
+                        <span class="date">2026.06.11</span>
+                        Doubted Cartesian coordinates. Rebuilding sets from dust particles.
+                    </li>
+                    <li>
+                        <span class="date">2026.05.24</span>
+                        Listening to complex arrangements; analyzing time signature shifts.
+                    </li>
+                </ul>
+
+                <h2>Reading List</h2>
+                <p style="font-size: 0.9rem; font-style: italic;">
+                    "The Unreasonable Effectiveness of Mathematics in the Natural Sciences" — Eugene Wigner
+                </p>
+            </aside>
+
+        </div>
+
+        <footer>
+            <p>Built with love. Hosted on Neocities. © 2026</p>
+        </footer>
+
+    </div>
+
+    <script>
+        const toggleBtn = document.getElementById('themeToggle');
+        const themeLabel = document.getElementById('themeLabel');
+        const rootElement = document.documentElement;
+
+        const currentTheme = localStorage.getItem('theme') || 'light';
+        if (currentTheme === 'dark') {
+            rootElement.setAttribute('data-theme', 'dark');
+            themeLabel.textContent = 'PROTOCOL: DARK';
+        }
+
+        toggleBtn.addEventListener('click', () => {
+            const isDark = rootElement.getAttribute('data-theme') === 'dark';
+            
+            if (isDark) {
+                rootElement.removeAttribute('data-theme');
+                themeLabel.textContent = 'PROTOCOL: LIGHT';
+                localStorage.setItem('theme', 'light');
+            } else {
+                rootElement.setAttribute('data-theme', 'dark');
+                themeLabel.textContent = 'PROTOCOL: DARK';
+                localStorage.setItem('theme', 'dark');
+            }
+        });
+
+        // Safe JS Hover Handlers for laptop displays
+        const setupHover = (triggerClass, panelClass) => {
+            const trigger = document.querySelector(triggerClass);
+            const panels = document.querySelectorAll(panelClass);
+            if (trigger) {
+                trigger.addEventListener('mouseenter', () => {
+                    panels.forEach(p => p.classList.add('panel-visible'));
+                });
+                trigger.addEventListener('mouseleave', () => {
+                    panels.forEach(p => p.classList.remove('panel-visible'));
+                });
+            }
+        };
+
+        setupHover('.math-trigger', '.math-panel');
+        setupHover('.phil-trigger', '.phil-panel');
+        setupHover('.music-trigger', '.music-panel');
+    </script>
+
+</body>
+</html>
